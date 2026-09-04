@@ -167,6 +167,12 @@ func TestResolveFluxImagePolicyUsesNameFallbackAndDigest(t *testing.T) {
 	if fluxPolicyIsCurrentAndReady(stalePolicy) {
 		t.Fatal("stale Flux status was accepted as Ready")
 	}
+	staleCondition := policy.DeepCopy()
+	conditions := staleCondition.Object["status"].(map[string]interface{})["conditions"].([]interface{})
+	conditions[0].(map[string]interface{})["observedGeneration"] = int64(6)
+	if fluxPolicyIsCurrentAndReady(staleCondition) {
+		t.Fatal("stale Flux Ready condition was accepted as Ready")
+	}
 }
 
 func TestResolveFluxImagePolicyPrefersImageField(t *testing.T) {

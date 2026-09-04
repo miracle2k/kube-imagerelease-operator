@@ -6,7 +6,7 @@ import (
 
 const (
 	// ImageReleaseConditionReady reports whether the release source is resolved
-	// and every subscribed workload was updated successfully.
+	// and every subscribed workload has reached its updated state.
 	ImageReleaseConditionReady = "Ready"
 
 	// ImageReleaseConditionSourceResolved reports whether spec resolved to an
