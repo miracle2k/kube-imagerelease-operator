@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"sort"
 	"strings"
 	"time"
 
@@ -406,7 +407,28 @@ func (r *ImageReleaseReconciler) reconcileTargets(ctx context.Context, release *
 		}
 	}
 
+	// The cache does not promise a stable list order. Keep status deterministic
+	// so an otherwise-idempotent reconciliation never patches only to reorder
+	// subscribed workload entries (which would enqueue the ImageRelease again).
+	sortWorkloadStatuses(statuses)
+
 	return statuses, joinErrors(errs)
+}
+
+func sortWorkloadStatuses(statuses []deployv1alpha1.WorkloadStatus) {
+	sort.Slice(statuses, func(i, j int) bool {
+		left, right := statuses[i], statuses[j]
+		if left.APIVersion != right.APIVersion {
+			return left.APIVersion < right.APIVersion
+		}
+		if left.Kind != right.Kind {
+			return left.Kind < right.Kind
+		}
+		if left.Name != right.Name {
+			return left.Name < right.Name
+		}
+		return left.Container < right.Container
+	})
 }
 
 func (r *ImageReleaseReconciler) reconcileDeployment(ctx context.Context, workload *appsv1.Deployment, releaseName, desiredImage string) (deployv1alpha1.WorkloadStatus, error) {

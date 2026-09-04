@@ -265,6 +265,34 @@ func TestImmutableReferenceValidation(t *testing.T) {
 	}
 }
 
+func TestSortWorkloadStatusesIsDeterministic(t *testing.T) {
+	t.Parallel()
+
+	statuses := []deployv1alpha1.WorkloadStatus{
+		{APIVersion: "batch/v1", Kind: "CronJob", Name: "cleanup", Container: "app"},
+		{APIVersion: "apps/v1", Kind: "Deployment", Name: "web", Container: "sidecar"},
+		{APIVersion: "apps/v1", Kind: "Deployment", Name: "web", Container: "app"},
+		{APIVersion: "apps/v1", Kind: "StatefulSet", Name: "worker", Container: "app"},
+	}
+
+	sortWorkloadStatuses(statuses)
+	got := make([]string, 0, len(statuses))
+	for _, status := range statuses {
+		got = append(got, status.APIVersion+"/"+status.Kind+"/"+status.Name+"/"+status.Container)
+	}
+	want := []string{
+		"apps/v1/Deployment/web/app",
+		"apps/v1/Deployment/web/sidecar",
+		"apps/v1/StatefulSet/worker/app",
+		"batch/v1/CronJob/cleanup/app",
+	}
+	for index := range want {
+		if got[index] != want[index] {
+			t.Fatalf("status order = %#v, want %#v", got, want)
+		}
+	}
+}
+
 func testReconciler(t *testing.T, objects ...client.Object) (*ImageReleaseReconciler, *applyRecordingClient) {
 	t.Helper()
 	scheme := runtime.NewScheme()
