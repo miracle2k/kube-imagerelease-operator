@@ -23,7 +23,7 @@ jobs:
       - run: make generate manifests bundle
       - run: git diff --exit-code
       - run: kubectl apply --dry-run=client -f config/install.yaml
-      - run: docker build --tag deploymanager:ci .
+      - run: docker build --platform linux/amd64 --tag deploymanager:ci .
 
   publish-image:
     if: github.event_name == 'push'
@@ -51,6 +51,7 @@ jobs:
       - uses: docker/build-push-action@v6
         with:
           context: .
+          platforms: linux/amd64
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
