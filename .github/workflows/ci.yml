@@ -22,7 +22,8 @@ jobs:
       - run: go test ./...
       - run: make generate manifests bundle
       - run: git diff --exit-code
-      - run: kubectl apply --dry-run=client -f config/install.yaml
+      - run: kubectl kustomize config/default >/dev/null
+      - run: kubectl kustomize config/samples >/dev/null
       - run: docker build --platform linux/amd64 --tag deploymanager:ci .
 
   publish-image:
