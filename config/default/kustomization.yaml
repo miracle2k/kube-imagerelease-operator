@@ -1,0 +1,10 @@
+namespace: deploymanager-system
+resources:
+  - namespace.yaml
+  - ../crd
+  - ../rbac
+  - ../manager
+images:
+  - name: controller
+    newName: ghcr.io/miracle2k/deploymanager
+    newTag: latest

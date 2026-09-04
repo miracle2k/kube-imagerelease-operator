@@ -1,0 +1,74 @@
+---
+# Each normal workload deliberately omits container.image. Kubernetes requires
+# an image on first create, so bootstrap a new workload once (see
+# bootstrap-workload.yaml) before applying this normal configuration. The named
+# container then opts into the release in its own namespace, so later applies
+# cannot carry an old image and roll it back.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hello-world-web
+  namespace: default
+  annotations:
+    deploy.example.com/image-release: hello-world
+    deploy.example.com/image-release-container: app
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: hello-world-web
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: hello-world-web
+    spec:
+      containers:
+        - name: app
+          resources:
+            requests:
+              cpu: 100m
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: hello-world-worker
+  namespace: default
+  annotations:
+    deploy.example.com/image-release: hello-world
+    deploy.example.com/image-release-container: app
+spec:
+  serviceName: hello-world-worker
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: hello-world-worker
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: hello-world-worker
+    spec:
+      containers:
+        - name: app
+          resources:
+            requests:
+              cpu: 100m
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: hello-world-cleanup
+  namespace: default
+  annotations:
+    deploy.example.com/image-release: hello-world
+    deploy.example.com/image-release-container: app
+spec:
+  schedule: "0 * * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: OnFailure
+          containers:
+            - name: app
+              resources:
+                requests:
+                  cpu: 100m

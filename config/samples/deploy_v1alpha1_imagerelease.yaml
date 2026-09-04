@@ -1,0 +1,8 @@
+---
+apiVersion: deploy.example.com/v1alpha1
+kind: ImageRelease
+metadata:
+  name: hello-world
+  namespace: default
+spec:
+  image: ghcr.io/example/hello-world@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa

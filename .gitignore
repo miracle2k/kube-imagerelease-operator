@@ -1,0 +1,12 @@
+# Build output
+bin/
+dist/
+coverage.out
+
+# Local test assets
+.envtest/
+
+# OS/editor files
+.DS_Store
+.idea/
+.vscode/

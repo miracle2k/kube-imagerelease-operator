@@ -1,0 +1,2 @@
+resources:
+  - bases/deploy.example.com_imagereleases.yaml
