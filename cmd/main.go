@@ -13,8 +13,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 
-	deployv1alpha1 "github.com/miracle2k/deploymanager/api/v1alpha1"
-	"github.com/miracle2k/deploymanager/controllers"
+	imagereleasev1alpha1 "github.com/miracle2k/kube-imagerelease-operator/api/v1alpha1"
+	"github.com/miracle2k/kube-imagerelease-operator/controllers"
 )
 
 func main() {
@@ -37,14 +37,14 @@ func main() {
 
 	scheme := runtime.NewScheme()
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
-	utilruntime.Must(deployv1alpha1.AddToScheme(scheme))
+	utilruntime.Must(imagereleasev1alpha1.AddToScheme(scheme))
 
 	managerOptions := ctrl.Options{
 		Scheme:                  scheme,
 		Metrics:                 metricsserver.Options{BindAddress: metricsAddr},
 		HealthProbeBindAddress:  probeAddr,
 		LeaderElection:          enableLeaderElection,
-		LeaderElectionID:        "deploymanager.deploy.example.com",
+		LeaderElectionID:        "kube-imagerelease-operator.nix.re",
 		LeaderElectionNamespace: leaderElectionNamespace,
 	}
 	if watchNamespace != "" {
@@ -62,7 +62,7 @@ func main() {
 	reconciler := &controllers.ImageReleaseReconciler{
 		Client:     mgr.GetClient(),
 		Scheme:     mgr.GetScheme(),
-		Recorder:   mgr.GetEventRecorderFor("deploymanager-image-controller"),
+		Recorder:   mgr.GetEventRecorderFor("kube-imagerelease-operator-image-controller"),
 		APIReader:  mgr.GetAPIReader(),
 		RESTMapper: mgr.GetRESTMapper(),
 	}
@@ -79,7 +79,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	ctrl.Log.WithName("setup").Info("starting DeployManager", "watchNamespace", watchNamespace)
+	ctrl.Log.WithName("setup").Info("starting kube-imagerelease-operator", "watchNamespace", watchNamespace)
 	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
 		ctrl.Log.WithName("setup").Error(err, "manager exited")
 		os.Exit(1)

@@ -1,5 +1,5 @@
 ---
-apiVersion: deploy.example.com/v1alpha1
+apiVersion: kube-imagerelease-operator.nix.re/v1alpha1
 kind: ImageRelease
 metadata:
   name: hello-world

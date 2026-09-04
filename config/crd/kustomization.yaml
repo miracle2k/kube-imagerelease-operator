@@ -1,2 +1,2 @@
 resources:
-  - bases/deploy.example.com_imagereleases.yaml
+  - bases/kube-imagerelease-operator.nix.re_imagereleases.yaml

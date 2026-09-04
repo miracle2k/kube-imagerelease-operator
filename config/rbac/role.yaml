@@ -2,7 +2,7 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: deploymanager-manager-role
+  name: kube-imagerelease-operator-manager-role
 rules:
 - apiGroups:
   - ""
@@ -31,22 +31,6 @@ rules:
   - patch
   - watch
 - apiGroups:
-  - deploy.example.com
-  resources:
-  - imagereleases
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
-  - deploy.example.com
-  resources:
-  - imagereleases/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
   - image.toolkit.fluxcd.io
   resources:
   - imagepolicies
@@ -54,3 +38,19 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - kube-imagerelease-operator.nix.re
+  resources:
+  - imagereleases
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - kube-imagerelease-operator.nix.re
+  resources:
+  - imagereleases/status
+  verbs:
+  - get
+  - patch
+  - update

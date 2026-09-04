@@ -1,6 +1,6 @@
-# DeployManager
+# kube-imagerelease-operator
 
-DeployManager keeps Kubernetes configuration changes separate from application image releases.
+`kube-imagerelease-operator` keeps Kubernetes configuration changes separate from application image releases.
 
 - Store the intended immutable image digest in an `ImageRelease`.
 - Let Deployments, StatefulSets, and CronJobs opt in with annotations.
@@ -10,8 +10,8 @@ DeployManager keeps Kubernetes configuration changes separate from application i
 ## Install
 
 ```sh
-kubectl apply -f https://raw.githubusercontent.com/miracle2k/deploymanager/main/config/install.yaml
-kubectl -n deploymanager-system rollout status deployment/deploymanager-controller-manager
+kubectl apply -f https://raw.githubusercontent.com/miracle2k/kube-imagerelease-operator/main/config/install.yaml
+kubectl -n kube-imagerelease-operator-system rollout status deployment/kube-imagerelease-operator-controller-manager
 ```
 
 ## Hello World
@@ -19,7 +19,7 @@ kubectl -n deploymanager-system rollout status deployment/deploymanager-controll
 Create an image release using your immutable digest:
 
 ```yaml
-apiVersion: deploy.example.com/v1alpha1
+apiVersion: kube-imagerelease-operator.nix.re/v1alpha1
 kind: ImageRelease
 metadata:
   name: hello-world
@@ -37,8 +37,8 @@ metadata:
   name: hello-world-web
   namespace: default
   annotations:
-    deploy.example.com/image-release: hello-world
-    deploy.example.com/image-release-container: app
+    kube-imagerelease-operator.nix.re/image-release: hello-world
+    kube-imagerelease-operator.nix.re/image-release-container: app
 spec:
   selector:
     matchLabels: {app.kubernetes.io/name: hello-world-web}
@@ -58,7 +58,7 @@ kubectl get imagerelease hello-world -n default
 
 More complete direct-image, Flux, and workload examples are in [`config/samples`](config/samples).
 
-Flux users need an existing `ImagePolicy` that reports `status.latestRef.digest` (configure Flux digest reflection accordingly). DeployManager reads that selected digest; it does not scan registries or implement Flux image automation.
+Flux users need an existing `ImagePolicy` that reports `status.latestRef.digest` (configure Flux digest reflection accordingly). `kube-imagerelease-operator` reads that selected digest; it does not scan registries or implement Flux image automation.
 
 ### First-create note
 

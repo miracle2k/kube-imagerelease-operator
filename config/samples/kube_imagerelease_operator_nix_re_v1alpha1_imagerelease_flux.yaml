@@ -1,8 +1,8 @@
 ---
 # This consumes a Flux ImagePolicy that already exists in the same namespace.
-# DeployManager reads its Ready, observed generation, and latestRef status; it
+# kube-imagerelease-operator reads its Ready, observed generation, and latestRef status; it
 # does not install Flux resources or scan a registry itself.
-apiVersion: deploy.example.com/v1alpha1
+apiVersion: kube-imagerelease-operator.nix.re/v1alpha1
 kind: ImageRelease
 metadata:
   name: hello-world-from-flux

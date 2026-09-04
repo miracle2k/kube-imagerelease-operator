@@ -1,4 +1,4 @@
-// Package v1alpha1 contains API Schema definitions for the deploy.example.com
+// Package v1alpha1 contains API Schema definitions for the kube-imagerelease-operator.nix.re
 // v1alpha1 API group.
 package v1alpha1
 
@@ -10,7 +10,7 @@ import (
 var (
 	// GroupVersion is the API group and version used to register ImageRelease
 	// objects with a Kubernetes scheme.
-	GroupVersion = schema.GroupVersion{Group: "deploy.example.com", Version: "v1alpha1"}
+	GroupVersion = schema.GroupVersion{Group: "kube-imagerelease-operator.nix.re", Version: "v1alpha1"}
 
 	// SchemeBuilder registers the types in this API group.
 	SchemeBuilder = &scheme.Builder{GroupVersion: GroupVersion}

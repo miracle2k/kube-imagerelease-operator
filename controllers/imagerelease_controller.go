@@ -1,4 +1,4 @@
-// Package controllers contains the reconciliation logic for DeployManager.
+// Package controllers contains the reconciliation logic for kube-imagerelease-operator.
 package controllers
 
 import (
@@ -30,20 +30,20 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
-	deployv1alpha1 "github.com/miracle2k/deploymanager/api/v1alpha1"
+	imagereleasev1alpha1 "github.com/miracle2k/kube-imagerelease-operator/api/v1alpha1"
 )
 
 const (
 	// ImageReleaseAnnotation selects a namespace-local ImageRelease.
-	ImageReleaseAnnotation = "deploy.example.com/image-release"
+	ImageReleaseAnnotation = "kube-imagerelease-operator.nix.re/image-release"
 	// ImageReleaseContainerAnnotation identifies the named application container
-	// whose image DeployManager is allowed to manage.
-	ImageReleaseContainerAnnotation = "deploy.example.com/image-release-container"
+	// whose image kube-imagerelease-operator is allowed to manage.
+	ImageReleaseContainerAnnotation = "kube-imagerelease-operator.nix.re/image-release-container"
 
 	fluxImagePolicyGroup = "image.toolkit.fluxcd.io"
 	fluxImagePolicyKind  = "ImagePolicy"
 
-	imageControllerFieldManager = "deploymanager-image-controller"
+	imageControllerFieldManager = "kube-imagerelease-operator-image-controller"
 )
 
 const malformedContainerStatusName = "<missing-or-invalid>"
@@ -75,7 +75,7 @@ type ImageReleaseReconciler struct {
 }
 
 // SetupWithManager registers ImageRelease and supported workload watches. Flux
-// ImagePolicy is watched only when its CRD is available, so DeployManager works
+// ImagePolicy is watched only when its CRD is available, so kube-imagerelease-operator works
 // normally in clusters that do not use Flux.
 func (r *ImageReleaseReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	if r.Client == nil {
@@ -92,7 +92,7 @@ func (r *ImageReleaseReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	}
 
 	b := ctrl.NewControllerManagedBy(mgr).
-		For(&deployv1alpha1.ImageRelease{}).
+		For(&imagereleasev1alpha1.ImageRelease{}).
 		Watches(&appsv1.Deployment{}, handler.EnqueueRequestsFromMapFunc(r.mapWorkloadToImageRelease)).
 		Watches(&appsv1.StatefulSet{}, handler.EnqueueRequestsFromMapFunc(r.mapWorkloadToImageRelease)).
 		Watches(&batchv1.CronJob{}, handler.EnqueueRequestsFromMapFunc(r.mapWorkloadToImageRelease))
@@ -113,7 +113,7 @@ func (r *ImageReleaseReconciler) SetupWithManager(mgr ctrl.Manager) error {
 // Reconcile resolves the release source and applies it narrowly to every
 // workload in the same namespace that explicitly subscribes to this release.
 func (r *ImageReleaseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	var release deployv1alpha1.ImageRelease
+	var release imagereleasev1alpha1.ImageRelease
 	// Desired release state is durable in the API server. Read it directly so a
 	// cache delay cannot briefly reapply an older digest after a release change.
 	if err := r.apiReader().Get(ctx, req.NamespacedName, &release); err != nil {
@@ -122,7 +122,7 @@ func (r *ImageReleaseReconciler) Reconcile(ctx context.Context, req ctrl.Request
 	statusBefore := release.DeepCopy()
 
 	resolved, sourceErr := r.resolveImage(ctx, &release)
-	var workloads []deployv1alpha1.WorkloadStatus
+	var workloads []imagereleasev1alpha1.WorkloadStatus
 	var targetsErr error
 	if sourceErr == nil {
 		workloads, targetsErr = r.reconcileTargets(ctx, &release, resolved.Reference)
@@ -171,7 +171,7 @@ type resolvedImage struct {
 
 // resolveImage accepts exactly one source and returns a digest-only reference
 // suitable for a Kubernetes container image field.
-func (r *ImageReleaseReconciler) resolveImage(ctx context.Context, release *deployv1alpha1.ImageRelease) (resolvedImage, error) {
+func (r *ImageReleaseReconciler) resolveImage(ctx context.Context, release *imagereleasev1alpha1.ImageRelease) (resolvedImage, error) {
 	if release.Spec.Image != nil && release.Spec.ImagePolicyRef != nil {
 		return resolvedImage{}, fmt.Errorf("spec.image and spec.imagePolicyRef are mutually exclusive")
 	}
@@ -219,7 +219,7 @@ func (r *ImageReleaseReconciler) resolveImage(ctx context.Context, release *depl
 	}
 	image, _, _ := unstructured.NestedString(latestRef, "image")
 	// Flux's public API currently calls this field `name`; retain `image` as
-	// the primary spelling specified by DeployManager's API contract while
+	// the primary spelling specified by kube-imagerelease-operator's API contract while
 	// supporting both served Flux versions.
 	if image == "" {
 		image, _, _ = unstructured.NestedString(latestRef, "name")
@@ -264,7 +264,7 @@ func splitImmutableReference(value string) (string, string, error) {
 }
 
 // composeImmutableReference validates a repository and digest. It strips a
-// tag from the repository because DeployManager must write digest-only image
+// tag from the repository because kube-imagerelease-operator must write digest-only image
 // references to workloads.
 func composeImmutableReference(image, digest string) (string, string, error) {
 	image = strings.TrimSpace(image)
@@ -343,8 +343,8 @@ func fluxPolicyIsCurrentAndReady(policy *unstructured.Unstructured) bool {
 	return false
 }
 
-func (r *ImageReleaseReconciler) reconcileTargets(ctx context.Context, release *deployv1alpha1.ImageRelease, desiredImage string) ([]deployv1alpha1.WorkloadStatus, error) {
-	var statuses []deployv1alpha1.WorkloadStatus
+func (r *ImageReleaseReconciler) reconcileTargets(ctx context.Context, release *imagereleasev1alpha1.ImageRelease, desiredImage string) ([]imagereleasev1alpha1.WorkloadStatus, error) {
+	var statuses []imagereleasev1alpha1.WorkloadStatus
 	var errs []error
 
 	var deployments appsv1.DeploymentList
@@ -415,7 +415,7 @@ func (r *ImageReleaseReconciler) reconcileTargets(ctx context.Context, release *
 	return statuses, joinErrors(errs)
 }
 
-func sortWorkloadStatuses(statuses []deployv1alpha1.WorkloadStatus) {
+func sortWorkloadStatuses(statuses []imagereleasev1alpha1.WorkloadStatus) {
 	sort.Slice(statuses, func(i, j int) bool {
 		left, right := statuses[i], statuses[j]
 		if left.APIVersion != right.APIVersion {
@@ -431,7 +431,7 @@ func sortWorkloadStatuses(statuses []deployv1alpha1.WorkloadStatus) {
 	})
 }
 
-func (r *ImageReleaseReconciler) reconcileDeployment(ctx context.Context, workload *appsv1.Deployment, releaseName, desiredImage string) (deployv1alpha1.WorkloadStatus, error) {
+func (r *ImageReleaseReconciler) reconcileDeployment(ctx context.Context, workload *appsv1.Deployment, releaseName, desiredImage string) (imagereleasev1alpha1.WorkloadStatus, error) {
 	current := &appsv1.Deployment{}
 	if err := r.readCurrentWorkload(ctx, workload, current); err != nil {
 		return r.workloadReadFailure("apps/v1", "Deployment", workload, err)
@@ -449,7 +449,7 @@ func (r *ImageReleaseReconciler) reconcileDeployment(ctx context.Context, worklo
 	}, releaseName, desiredImage)
 }
 
-func (r *ImageReleaseReconciler) reconcileStatefulSet(ctx context.Context, workload *appsv1.StatefulSet, releaseName, desiredImage string) (deployv1alpha1.WorkloadStatus, error) {
+func (r *ImageReleaseReconciler) reconcileStatefulSet(ctx context.Context, workload *appsv1.StatefulSet, releaseName, desiredImage string) (imagereleasev1alpha1.WorkloadStatus, error) {
 	current := &appsv1.StatefulSet{}
 	if err := r.readCurrentWorkload(ctx, workload, current); err != nil {
 		return r.workloadReadFailure("apps/v1", "StatefulSet", workload, err)
@@ -467,7 +467,7 @@ func (r *ImageReleaseReconciler) reconcileStatefulSet(ctx context.Context, workl
 	}, releaseName, desiredImage)
 }
 
-func (r *ImageReleaseReconciler) reconcileCronJob(ctx context.Context, workload *batchv1.CronJob, releaseName, desiredImage string) (deployv1alpha1.WorkloadStatus, error) {
+func (r *ImageReleaseReconciler) reconcileCronJob(ctx context.Context, workload *batchv1.CronJob, releaseName, desiredImage string) (imagereleasev1alpha1.WorkloadStatus, error) {
 	current := &batchv1.CronJob{}
 	if err := r.readCurrentWorkload(ctx, workload, current); err != nil {
 		return r.workloadReadFailure("batch/v1", "CronJob", workload, err)
@@ -514,7 +514,7 @@ func (r *ImageReleaseReconciler) apiReader() client.Reader {
 	return r.Client
 }
 
-func (r *ImageReleaseReconciler) workloadReadFailure(apiVersion, kind string, workload client.Object, err error) (deployv1alpha1.WorkloadStatus, error) {
+func (r *ImageReleaseReconciler) workloadReadFailure(apiVersion, kind string, workload client.Object, err error) (imagereleasev1alpha1.WorkloadStatus, error) {
 	status := workloadStatus(apiVersion, kind, workload.GetName(), statusContainerName(workload))
 	if apierrors.IsNotFound(err) {
 		return status, errTargetNoLongerSubscribes
@@ -522,7 +522,7 @@ func (r *ImageReleaseReconciler) workloadReadFailure(apiVersion, kind string, wo
 	return status, fmt.Errorf("%s/%s: read current workload before update: %w", kind, workload.GetName(), err)
 }
 
-func (r *ImageReleaseReconciler) reconcileWorkload(ctx context.Context, target workloadTarget, releaseName, desiredImage string) (deployv1alpha1.WorkloadStatus, error) {
+func (r *ImageReleaseReconciler) reconcileWorkload(ctx context.Context, target workloadTarget, releaseName, desiredImage string) (imagereleasev1alpha1.WorkloadStatus, error) {
 	containerName, err := controlledContainerName(target.Object)
 	status := workloadStatus(target.APIVersion, target.Kind, target.Object.GetName(), statusContainerName(target.Object))
 	if err != nil {
@@ -660,8 +660,8 @@ func containerIndex(containers []corev1.Container, wanted string) int {
 	return -1
 }
 
-func workloadStatus(apiVersion, kind, name, container string) deployv1alpha1.WorkloadStatus {
-	return deployv1alpha1.WorkloadStatus{
+func workloadStatus(apiVersion, kind, name, container string) imagereleasev1alpha1.WorkloadStatus {
+	return imagereleasev1alpha1.WorkloadStatus{
 		APIVersion: apiVersion,
 		Kind:       kind,
 		Name:       name,
@@ -691,18 +691,18 @@ func statefulSetReady(workload *appsv1.StatefulSet) bool {
 		(workload.Status.UpdateRevision == "" || workload.Status.CurrentRevision == workload.Status.UpdateRevision)
 }
 
-func (r *ImageReleaseReconciler) setReleaseStatus(release *deployv1alpha1.ImageRelease, resolved resolvedImage, sourceErr error, workloads []deployv1alpha1.WorkloadStatus, targetsErr error) {
+func (r *ImageReleaseReconciler) setReleaseStatus(release *imagereleasev1alpha1.ImageRelease, resolved resolvedImage, sourceErr error, workloads []imagereleasev1alpha1.WorkloadStatus, targetsErr error) {
 	now := metav1.Now()
 	release.Status.ObservedGeneration = release.Generation
 	if sourceErr == nil {
-		release.Status.ResolvedImage = &deployv1alpha1.ResolvedImage{
+		release.Status.ResolvedImage = &imagereleasev1alpha1.ResolvedImage{
 			Image:  resolved.Repository,
 			Tag:    resolved.Tag,
 			Digest: resolved.Digest,
 		}
 		release.Status.Workloads = workloads
 		setCondition(&release.Status.Conditions, metav1.Condition{
-			Type:               deployv1alpha1.ImageReleaseConditionSourceResolved,
+			Type:               imagereleasev1alpha1.ImageReleaseConditionSourceResolved,
 			Status:             metav1.ConditionTrue,
 			Reason:             "Resolved",
 			Message:            "Image source resolved to " + resolved.Reference,
@@ -713,7 +713,7 @@ func (r *ImageReleaseReconciler) setReleaseStatus(release *deployv1alpha1.ImageR
 		release.Status.ResolvedImage = nil
 		release.Status.Workloads = nil
 		setCondition(&release.Status.Conditions, metav1.Condition{
-			Type:               deployv1alpha1.ImageReleaseConditionSourceResolved,
+			Type:               imagereleasev1alpha1.ImageReleaseConditionSourceResolved,
 			Status:             metav1.ConditionFalse,
 			Reason:             "ResolutionFailed",
 			Message:            sourceErr.Error(),
@@ -724,7 +724,7 @@ func (r *ImageReleaseReconciler) setReleaseStatus(release *deployv1alpha1.ImageR
 
 	if sourceErr != nil {
 		setCondition(&release.Status.Conditions, metav1.Condition{
-			Type:               deployv1alpha1.ImageReleaseConditionTargetsUpdated,
+			Type:               imagereleasev1alpha1.ImageReleaseConditionTargetsUpdated,
 			Status:             metav1.ConditionUnknown,
 			Reason:             "WaitingForSource",
 			Message:            "Targets were not updated because the image source is unresolved",
@@ -732,7 +732,7 @@ func (r *ImageReleaseReconciler) setReleaseStatus(release *deployv1alpha1.ImageR
 			LastTransitionTime: now,
 		})
 		setCondition(&release.Status.Conditions, metav1.Condition{
-			Type:               deployv1alpha1.ImageReleaseConditionReady,
+			Type:               imagereleasev1alpha1.ImageReleaseConditionReady,
 			Status:             metav1.ConditionFalse,
 			Reason:             "SourceResolutionFailed",
 			Message:            sourceErr.Error(),
@@ -744,7 +744,7 @@ func (r *ImageReleaseReconciler) setReleaseStatus(release *deployv1alpha1.ImageR
 
 	if targetsErr != nil {
 		setCondition(&release.Status.Conditions, metav1.Condition{
-			Type:               deployv1alpha1.ImageReleaseConditionTargetsUpdated,
+			Type:               imagereleasev1alpha1.ImageReleaseConditionTargetsUpdated,
 			Status:             metav1.ConditionFalse,
 			Reason:             "UpdateFailed",
 			Message:            targetsErr.Error(),
@@ -752,7 +752,7 @@ func (r *ImageReleaseReconciler) setReleaseStatus(release *deployv1alpha1.ImageR
 			LastTransitionTime: now,
 		})
 		setCondition(&release.Status.Conditions, metav1.Condition{
-			Type:               deployv1alpha1.ImageReleaseConditionReady,
+			Type:               imagereleasev1alpha1.ImageReleaseConditionReady,
 			Status:             metav1.ConditionFalse,
 			Reason:             "TargetUpdateFailed",
 			Message:            targetsErr.Error(),
@@ -763,7 +763,7 @@ func (r *ImageReleaseReconciler) setReleaseStatus(release *deployv1alpha1.ImageR
 	}
 
 	setCondition(&release.Status.Conditions, metav1.Condition{
-		Type:               deployv1alpha1.ImageReleaseConditionTargetsUpdated,
+		Type:               imagereleasev1alpha1.ImageReleaseConditionTargetsUpdated,
 		Status:             metav1.ConditionTrue,
 		Reason:             "Synchronized",
 		Message:            fmt.Sprintf("Synchronized %d workload(s)", len(workloads)),
@@ -773,7 +773,7 @@ func (r *ImageReleaseReconciler) setReleaseStatus(release *deployv1alpha1.ImageR
 	for _, workload := range workloads {
 		if !workload.Ready {
 			setCondition(&release.Status.Conditions, metav1.Condition{
-				Type:               deployv1alpha1.ImageReleaseConditionReady,
+				Type:               imagereleasev1alpha1.ImageReleaseConditionReady,
 				Status:             metav1.ConditionFalse,
 				Reason:             "RolloutInProgress",
 				Message:            "Image source resolved and targets were synchronized; waiting for workload readiness",
@@ -784,7 +784,7 @@ func (r *ImageReleaseReconciler) setReleaseStatus(release *deployv1alpha1.ImageR
 		}
 	}
 	setCondition(&release.Status.Conditions, metav1.Condition{
-		Type:               deployv1alpha1.ImageReleaseConditionReady,
+		Type:               imagereleasev1alpha1.ImageReleaseConditionReady,
 		Status:             metav1.ConditionTrue,
 		Reason:             "Ready",
 		Message:            "Image source resolved and all subscribed targets are ready",
@@ -797,7 +797,7 @@ func setCondition(conditions *[]metav1.Condition, condition metav1.Condition) {
 	meta.SetStatusCondition(conditions, condition)
 }
 
-func (r *ImageReleaseReconciler) updateStatus(ctx context.Context, before, release *deployv1alpha1.ImageRelease) error {
+func (r *ImageReleaseReconciler) updateStatus(ctx context.Context, before, release *imagereleasev1alpha1.ImageRelease) error {
 	if reflect.DeepEqual(before.Status, release.Status) {
 		return nil
 	}
@@ -826,7 +826,7 @@ func (r *ImageReleaseReconciler) discoverFluxImagePolicyGVK() (schema.GroupVersi
 	}
 	mapping, err := r.RESTMapper.RESTMapping(schema.GroupKind{Group: fluxImagePolicyGroup, Kind: fluxImagePolicyKind})
 	if err != nil {
-		// The CRD can be installed after DeployManager starts. We cannot add an
+		// The CRD can be installed after kube-imagerelease-operator starts. We cannot add an
 		// informer dynamically, but resettable mappers let periodic Flux-source
 		// reconciliations discover it and read it correctly.
 		if resettable, ok := r.RESTMapper.(meta.ResettableRESTMapper); ok {
@@ -851,7 +851,7 @@ func (r *ImageReleaseReconciler) mapWorkloadToImageRelease(ctx context.Context, 
 	}
 
 	request := reconcile.Request{NamespacedName: types.NamespacedName{Namespace: object.GetNamespace(), Name: name}}
-	var release deployv1alpha1.ImageRelease
+	var release imagereleasev1alpha1.ImageRelease
 	if err := r.Get(ctx, request.NamespacedName, &release); err != nil {
 		if apierrors.IsNotFound(err) {
 			r.eventf(object, corev1.EventTypeWarning, "ImageReleaseNotFound", "Referenced ImageRelease %q does not exist in namespace %q", name, object.GetNamespace())
@@ -865,7 +865,7 @@ func (r *ImageReleaseReconciler) mapWorkloadToImageRelease(ctx context.Context, 
 }
 
 func (r *ImageReleaseReconciler) mapImagePolicyToImageReleases(ctx context.Context, object client.Object) []reconcile.Request {
-	var releases deployv1alpha1.ImageReleaseList
+	var releases imagereleasev1alpha1.ImageReleaseList
 	if err := r.List(ctx, &releases, client.InNamespace(object.GetNamespace())); err != nil {
 		ctrl.LoggerFrom(ctx).Error(err, "list ImageReleases for Flux ImagePolicy watch", "imagePolicy", object.GetName(), "namespace", object.GetNamespace())
 		return nil

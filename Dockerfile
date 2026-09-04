@@ -12,11 +12,11 @@ COPY . .
 RUN CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH go build \
     -trimpath \
     -ldflags='-s -w -extldflags "-static"' \
-    -o /out/deploymanager \
+    -o /out/kube-imagerelease-operator \
     ./cmd
 
 FROM gcr.io/distroless/static:nonroot
 WORKDIR /
-COPY --from=build /out/deploymanager /deploymanager
+COPY --from=build /out/kube-imagerelease-operator /kube-imagerelease-operator
 USER 65532:65532
-ENTRYPOINT ["/deploymanager"]
+ENTRYPOINT ["/kube-imagerelease-operator"]

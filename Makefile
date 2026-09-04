@@ -1,4 +1,4 @@
-IMAGE ?= ghcr.io/miracle2k/deploymanager:dev
+IMAGE ?= ghcr.io/miracle2k/kube-imagerelease-operator:dev
 
 .PHONY: generate manifests bundle fmt vet test build docker-build install uninstall deploy undeploy
 
@@ -7,7 +7,7 @@ generate:
 
 manifests:
 	go run sigs.k8s.io/controller-tools/cmd/controller-gen@v0.16.5 crd:crdVersions=v1 paths=./... output:crd:artifacts:config=config/crd/bases
-	go run sigs.k8s.io/controller-tools/cmd/controller-gen@v0.16.5 rbac:roleName=deploymanager-manager-role paths=./... output:rbac:artifacts:config=config/rbac
+	go run sigs.k8s.io/controller-tools/cmd/controller-gen@v0.16.5 rbac:roleName=kube-imagerelease-operator-manager-role paths=./... output:rbac:artifacts:config=config/rbac
 
 bundle:
 	kubectl kustomize config/default > config/install.yaml
@@ -22,16 +22,16 @@ test:
 	go test ./...
 
 build:
-	go build -o bin/deploymanager ./cmd
+	go build -o bin/kube-imagerelease-operator ./cmd
 
 docker-build:
 	docker build -t $(IMAGE) .
 
 install:
-	kubectl apply -f config/crd/bases/deploy.example.com_imagereleases.yaml
+	kubectl apply -f config/crd/bases/kube-imagerelease-operator.nix.re_imagereleases.yaml
 
 uninstall:
-	kubectl delete -f config/crd/bases/deploy.example.com_imagereleases.yaml
+	kubectl delete -f config/crd/bases/kube-imagerelease-operator.nix.re_imagereleases.yaml
 
 deploy:
 	kubectl apply -k config/default

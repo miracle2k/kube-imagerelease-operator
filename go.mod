@@ -1,4 +1,4 @@
-module github.com/miracle2k/deploymanager
+module github.com/miracle2k/kube-imagerelease-operator
 
 go 1.25.2
 

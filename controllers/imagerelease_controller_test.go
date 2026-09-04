@@ -18,7 +18,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
-	deployv1alpha1 "github.com/miracle2k/deploymanager/api/v1alpha1"
+	imagereleasev1alpha1 "github.com/miracle2k/kube-imagerelease-operator/api/v1alpha1"
 )
 
 const (
@@ -67,7 +67,7 @@ func TestReconcileDirectImageUpdatesOnlyNamedContainers(t *testing.T) {
 		t.Fatalf("CronJob app image = %q, want %q", got, want)
 	}
 
-	var gotRelease deployv1alpha1.ImageRelease
+	var gotRelease imagereleasev1alpha1.ImageRelease
 	if err := c.Get(context.Background(), requestFor(release).NamespacedName, &gotRelease); err != nil {
 		t.Fatalf("get ImageRelease: %v", err)
 	}
@@ -83,9 +83,9 @@ func TestReconcileDirectImageUpdatesOnlyNamedContainers(t *testing.T) {
 	if got, want := len(gotRelease.Status.Workloads), 3; got != want {
 		t.Fatalf("workload status entries = %d, want %d", got, want)
 	}
-	assertCondition(t, gotRelease.Status.Conditions, deployv1alpha1.ImageReleaseConditionSourceResolved, metav1.ConditionTrue)
-	assertCondition(t, gotRelease.Status.Conditions, deployv1alpha1.ImageReleaseConditionTargetsUpdated, metav1.ConditionTrue)
-	assertCondition(t, gotRelease.Status.Conditions, deployv1alpha1.ImageReleaseConditionReady, metav1.ConditionFalse)
+	assertCondition(t, gotRelease.Status.Conditions, imagereleasev1alpha1.ImageReleaseConditionSourceResolved, metav1.ConditionTrue)
+	assertCondition(t, gotRelease.Status.Conditions, imagereleasev1alpha1.ImageReleaseConditionTargetsUpdated, metav1.ConditionTrue)
+	assertCondition(t, gotRelease.Status.Conditions, imagereleasev1alpha1.ImageReleaseConditionReady, metav1.ConditionFalse)
 	if got, want := len(c.applyPayloads), 3; got != want {
 		t.Fatalf("SSA payload count = %d, want %d", got, want)
 	}
@@ -110,12 +110,12 @@ func TestReconcileReportsMalformedContainerAnnotation(t *testing.T) {
 		t.Fatal("reconcile succeeded with a missing controlled-container annotation")
 	}
 
-	var gotRelease deployv1alpha1.ImageRelease
+	var gotRelease imagereleasev1alpha1.ImageRelease
 	if err := c.Get(context.Background(), requestFor(release).NamespacedName, &gotRelease); err != nil {
 		t.Fatalf("get ImageRelease: %v", err)
 	}
-	assertCondition(t, gotRelease.Status.Conditions, deployv1alpha1.ImageReleaseConditionTargetsUpdated, metav1.ConditionFalse)
-	assertCondition(t, gotRelease.Status.Conditions, deployv1alpha1.ImageReleaseConditionReady, metav1.ConditionFalse)
+	assertCondition(t, gotRelease.Status.Conditions, imagereleasev1alpha1.ImageReleaseConditionTargetsUpdated, metav1.ConditionFalse)
+	assertCondition(t, gotRelease.Status.Conditions, imagereleasev1alpha1.ImageReleaseConditionReady, metav1.ConditionFalse)
 	if got, want := gotRelease.Status.Workloads[0].Container, malformedContainerStatusName; got != want {
 		t.Fatalf("malformed target status container = %q, want %q", got, want)
 	}
@@ -143,10 +143,10 @@ func TestResolveFluxImagePolicyUsesNameFallbackAndDigest(t *testing.T) {
 			},
 		},
 	}}
-	release := &deployv1alpha1.ImageRelease{
-		TypeMeta:   metav1.TypeMeta{APIVersion: deployv1alpha1.GroupVersion.String(), Kind: "ImageRelease"},
+	release := &imagereleasev1alpha1.ImageRelease{
+		TypeMeta:   metav1.TypeMeta{APIVersion: imagereleasev1alpha1.GroupVersion.String(), Kind: "ImageRelease"},
 		ObjectMeta: metav1.ObjectMeta{Name: "app", Namespace: testNamespace},
-		Spec:       deployv1alpha1.ImageReleaseSpec{ImagePolicyRef: &deployv1alpha1.ImagePolicyReference{Name: "selected"}},
+		Spec:       imagereleasev1alpha1.ImageReleaseSpec{ImagePolicyRef: &imagereleasev1alpha1.ImagePolicyReference{Name: "selected"}},
 	}
 	reconciler, _ := testReconciler(t, release, policy)
 	reconciler.FluxImagePolicyGVK = policyGVK
@@ -197,10 +197,10 @@ func TestResolveFluxImagePolicyPrefersImageField(t *testing.T) {
 			},
 		},
 	}}
-	release := &deployv1alpha1.ImageRelease{
-		TypeMeta:   metav1.TypeMeta{APIVersion: deployv1alpha1.GroupVersion.String(), Kind: "ImageRelease"},
+	release := &imagereleasev1alpha1.ImageRelease{
+		TypeMeta:   metav1.TypeMeta{APIVersion: imagereleasev1alpha1.GroupVersion.String(), Kind: "ImageRelease"},
 		ObjectMeta: metav1.ObjectMeta{Name: "app", Namespace: testNamespace},
-		Spec:       deployv1alpha1.ImageReleaseSpec{ImagePolicyRef: &deployv1alpha1.ImagePolicyReference{Name: "selected"}},
+		Spec:       imagereleasev1alpha1.ImageReleaseSpec{ImagePolicyRef: &imagereleasev1alpha1.ImagePolicyReference{Name: "selected"}},
 	}
 	reconciler, _ := testReconciler(t, release, policy)
 	reconciler.FluxImagePolicyGVK = policyGVK
@@ -229,12 +229,12 @@ func TestReconcileRejectsTagOnlyImage(t *testing.T) {
 		t.Fatal("invalid source did not request a retry")
 	}
 
-	var gotRelease deployv1alpha1.ImageRelease
+	var gotRelease imagereleasev1alpha1.ImageRelease
 	if err := c.Get(context.Background(), requestFor(release).NamespacedName, &gotRelease); err != nil {
 		t.Fatalf("get ImageRelease: %v", err)
 	}
-	assertCondition(t, gotRelease.Status.Conditions, deployv1alpha1.ImageReleaseConditionSourceResolved, metav1.ConditionFalse)
-	assertCondition(t, gotRelease.Status.Conditions, deployv1alpha1.ImageReleaseConditionReady, metav1.ConditionFalse)
+	assertCondition(t, gotRelease.Status.Conditions, imagereleasev1alpha1.ImageReleaseConditionSourceResolved, metav1.ConditionFalse)
+	assertCondition(t, gotRelease.Status.Conditions, imagereleasev1alpha1.ImageReleaseConditionReady, metav1.ConditionFalse)
 	if gotRelease.Status.ResolvedImage != nil {
 		t.Fatalf("invalid source unexpectedly resolved to %#v", gotRelease.Status.ResolvedImage)
 	}
@@ -268,7 +268,7 @@ func TestImmutableReferenceValidation(t *testing.T) {
 func TestSortWorkloadStatusesIsDeterministic(t *testing.T) {
 	t.Parallel()
 
-	statuses := []deployv1alpha1.WorkloadStatus{
+	statuses := []imagereleasev1alpha1.WorkloadStatus{
 		{APIVersion: "batch/v1", Kind: "CronJob", Name: "cleanup", Container: "app"},
 		{APIVersion: "apps/v1", Kind: "Deployment", Name: "web", Container: "sidecar"},
 		{APIVersion: "apps/v1", Kind: "Deployment", Name: "web", Container: "app"},
@@ -299,12 +299,12 @@ func testReconciler(t *testing.T, objects ...client.Object) (*ImageReleaseReconc
 	if err := clientgoscheme.AddToScheme(scheme); err != nil {
 		t.Fatalf("add Kubernetes scheme: %v", err)
 	}
-	if err := deployv1alpha1.AddToScheme(scheme); err != nil {
-		t.Fatalf("add DeployManager scheme: %v", err)
+	if err := imagereleasev1alpha1.AddToScheme(scheme); err != nil {
+		t.Fatalf("add kube-imagerelease-operator scheme: %v", err)
 	}
 	base := fake.NewClientBuilder().
 		WithScheme(scheme).
-		WithStatusSubresource(&deployv1alpha1.ImageRelease{}).
+		WithStatusSubresource(&imagereleasev1alpha1.ImageRelease{}).
 		WithObjects(objects...).
 		Build()
 	c := &applyRecordingClient{Client: base}
@@ -419,15 +419,15 @@ func setNamedImage(containers []corev1.Container, name, image string) error {
 	return fmt.Errorf("container %q not found", name)
 }
 
-func testRelease(name, image string) *deployv1alpha1.ImageRelease {
-	return &deployv1alpha1.ImageRelease{
-		TypeMeta: metav1.TypeMeta{APIVersion: deployv1alpha1.GroupVersion.String(), Kind: "ImageRelease"},
+func testRelease(name, image string) *imagereleasev1alpha1.ImageRelease {
+	return &imagereleasev1alpha1.ImageRelease{
+		TypeMeta: metav1.TypeMeta{APIVersion: imagereleasev1alpha1.GroupVersion.String(), Kind: "ImageRelease"},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:       name,
 			Namespace:  testNamespace,
 			Generation: 1,
 		},
-		Spec: deployv1alpha1.ImageReleaseSpec{Image: &image},
+		Spec: imagereleasev1alpha1.ImageReleaseSpec{Image: &image},
 	}
 }
 
@@ -494,7 +494,7 @@ func subscriptionAnnotations(release, container string) map[string]string {
 	return annotations
 }
 
-func requestFor(release *deployv1alpha1.ImageRelease) ctrl.Request {
+func requestFor(release *imagereleasev1alpha1.ImageRelease) ctrl.Request {
 	return ctrl.Request{NamespacedName: types.NamespacedName{Namespace: release.Namespace, Name: release.Name}}
 }
 

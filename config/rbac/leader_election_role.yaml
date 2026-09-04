@@ -1,8 +1,8 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
-  name: deploymanager-leader-election-role
-  namespace: deploymanager-system
+  name: kube-imagerelease-operator-leader-election-role
+  namespace: kube-imagerelease-operator-system
 rules:
   - apiGroups:
       - coordination.k8s.io

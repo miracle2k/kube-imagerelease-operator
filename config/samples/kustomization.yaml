@@ -1,4 +1,4 @@
 resources:
-  - deploy_v1alpha1_imagerelease.yaml
-  - deploy_v1alpha1_imagerelease_flux.yaml
+  - kube_imagerelease_operator_nix_re_v1alpha1_imagerelease.yaml
+  - kube_imagerelease_operator_nix_re_v1alpha1_imagerelease_flux.yaml
 # workloads.yaml is intentionally applied after the one-time bootstrap step.

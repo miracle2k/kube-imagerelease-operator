@@ -1,4 +1,4 @@
-namespace: deploymanager-system
+namespace: kube-imagerelease-operator-system
 resources:
   - namespace.yaml
   - ../crd
@@ -6,5 +6,5 @@ resources:
   - ../manager
 images:
   - name: controller
-    newName: ghcr.io/miracle2k/deploymanager
+    newName: ghcr.io/miracle2k/kube-imagerelease-operator
     newTag: latest

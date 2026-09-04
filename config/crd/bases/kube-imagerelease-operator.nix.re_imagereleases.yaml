@@ -4,9 +4,9 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.16.5
-  name: imagereleases.deploy.example.com
+  name: imagereleases.kube-imagerelease-operator.nix.re
 spec:
-  group: deploy.example.com
+  group: kube-imagerelease-operator.nix.re
   names:
     kind: ImageRelease
     listKind: ImageReleaseList

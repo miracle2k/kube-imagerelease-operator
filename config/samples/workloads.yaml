@@ -10,8 +10,8 @@ metadata:
   name: hello-world-web
   namespace: default
   annotations:
-    deploy.example.com/image-release: hello-world
-    deploy.example.com/image-release-container: app
+    kube-imagerelease-operator.nix.re/image-release: hello-world
+    kube-imagerelease-operator.nix.re/image-release-container: app
 spec:
   replicas: 2
   selector:
@@ -34,8 +34,8 @@ metadata:
   name: hello-world-worker
   namespace: default
   annotations:
-    deploy.example.com/image-release: hello-world
-    deploy.example.com/image-release-container: app
+    kube-imagerelease-operator.nix.re/image-release: hello-world
+    kube-imagerelease-operator.nix.re/image-release-container: app
 spec:
   serviceName: hello-world-worker
   selector:
@@ -58,8 +58,8 @@ metadata:
   name: hello-world-cleanup
   namespace: default
   annotations:
-    deploy.example.com/image-release: hello-world
-    deploy.example.com/image-release-container: app
+    kube-imagerelease-operator.nix.re/image-release: hello-world
+    kube-imagerelease-operator.nix.re/image-release-container: app
 spec:
   schedule: "0 * * * *"
   jobTemplate:
